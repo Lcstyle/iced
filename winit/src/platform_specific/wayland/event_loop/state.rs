@@ -564,7 +564,7 @@ impl SctkState {
         let e = self
             .frame_status
             .entry(surface.id())
-            .or_insert(FrameStatus::RequestedRedraw);
+            .or_insert(FrameStatus::Ready);
         if matches!(e, FrameStatus::Received) {
             *e = FrameStatus::Ready;
         }

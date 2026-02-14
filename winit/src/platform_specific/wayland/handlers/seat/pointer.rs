@@ -58,7 +58,7 @@ impl PointerHandler for SctkState {
                 let entry = self
                     .frame_status
                     .entry(e.surface.id())
-                    .or_insert(FrameStatus::RequestedRedraw);
+                    .or_insert(FrameStatus::Ready);
                 if matches!(entry, FrameStatus::Received) {
                     *entry = FrameStatus::Ready;
                 }

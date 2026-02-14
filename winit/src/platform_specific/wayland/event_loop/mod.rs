@@ -187,7 +187,7 @@ impl SctkEventLoop {
                                 let e = state
                                     .frame_status
                                     .entry(id)
-                                    .or_insert(FrameStatus::RequestedRedraw);
+                                    .or_insert(FrameStatus::Ready);
                                 if matches!(e, FrameStatus::Received) {
                                     *e = FrameStatus::Ready;
                                 }
