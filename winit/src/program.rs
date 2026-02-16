@@ -1459,6 +1459,18 @@ async fn run_instance<'a, P, C>(
                                             ),
                                         );
                                     }
+                                    compositor::SurfaceError::Lost => {
+                                        debug.render_finished();
+                                        log::warn!(
+                                            "Surface lost, reconfiguring and requesting redraw"
+                                        );
+                                        compositor.configure_surface(
+                                            &mut window.surface,
+                                            physical_size.width,
+                                            physical_size.height,
+                                        );
+                                        window.request_redraw();
+                                    }
                                     _ => {
                                         debug.render_finished();
                                         log::error!(
