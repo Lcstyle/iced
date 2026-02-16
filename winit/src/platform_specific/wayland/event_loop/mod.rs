@@ -483,7 +483,8 @@ impl SctkEventLoop {
                     if let Err(err) =
                         state.event_loop.dispatch(None, &mut state.state)
                     {
-                        log::error!("SCTK dispatch error: {err}");
+                        log::error!("SCTK dispatch error (fatal): {err}");
+                        return Err(Error::Calloop(err));
                     }
                     let had_events = !state.state.sctk_events.is_empty();
                     let mut wake_up = had_events;
