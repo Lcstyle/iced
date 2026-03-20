@@ -850,6 +850,49 @@ where
             }
         }
 
+        // Draw idle split lines for all splits
+        if picked_pane.is_none() {
+            if let Some(split_line) = style.split_line {
+                let bounds = layout.bounds();
+                let splits =
+                    node.split_regions(self.spacing, bounds.size());
+
+                for (_split, (axis, region, ratio)) in &splits {
+                    let region =
+                        axis.split_line_bounds(*region, *ratio, self.spacing);
+                    let region =
+                        region + Vector::new(bounds.x, bounds.y);
+
+                    renderer.fill_quad(
+                        renderer::Quad {
+                            bounds: match axis {
+                                Axis::Horizontal => Rectangle {
+                                    x: region.x,
+                                    y: (region.y
+                                        + (region.height - split_line.width)
+                                            / 2.0)
+                                        .round(),
+                                    width: region.width,
+                                    height: split_line.width,
+                                },
+                                Axis::Vertical => Rectangle {
+                                    x: (region.x
+                                        + (region.width - split_line.width)
+                                            / 2.0)
+                                        .round(),
+                                    y: region.y,
+                                    width: split_line.width,
+                                    height: region.height,
+                                },
+                            },
+                            ..renderer::Quad::default()
+                        },
+                        split_line.color,
+                    );
+                }
+            }
+        }
+
         if picked_pane.is_none() {
             if let Some((axis, split_region, is_picked)) = picked_split {
                 let highlight = if is_picked {
@@ -1238,6 +1281,9 @@ pub struct Style {
     pub picked_split: Line,
     /// The appearance of a hovered split.
     pub hovered_split: Line,
+    /// The appearance of the split line at rest (when not hovered or picked).
+    /// If `None`, no line is drawn in the idle state.
+    pub split_line: Option<Line>,
 }
 
 /// The appearance of a highlight of the [`PaneGrid`].
@@ -1313,5 +1359,6 @@ pub fn default(theme: &Theme) -> Style {
             color: palette.primary.strong.color,
             width: 2.0,
         },
+        split_line: None,
     }
 }
