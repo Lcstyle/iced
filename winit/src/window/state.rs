@@ -101,16 +101,6 @@ where
         self.a11y_ready = ready;
     }
 
-    #[doc(hidden)]
-    pub fn ready_state(&self) -> bool {
-        self.ready
-    }
-
-    #[doc(hidden)]
-    pub fn a11y_ready_state(&self) -> bool {
-        self.a11y_ready
-    }
-
     pub fn viewport(&self) -> &Viewport {
         &self.viewport
     }
