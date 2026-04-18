@@ -1042,6 +1042,22 @@ async fn run_instance<P>(
                 window.redraw_requested = false;
 
                 if !window.state.is_ready() {
+                    // Rate-limit diagnostic: log every 30th skip to avoid flooding.
+                    {
+                        static SKIP_LOG_COUNTER: std::sync::atomic::AtomicU64 =
+                            std::sync::atomic::AtomicU64::new(0);
+                        let n = SKIP_LOG_COUNTER
+                            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                        if n % 30 == 0 {
+                            eprintln!(
+                                "[ICED-RENDER-SKIP] id={:?} ready={} a11y_ready={} count={}",
+                                id,
+                                window.state.ready_state(),
+                                window.state.a11y_ready_state(),
+                                n
+                            );
+                        }
+                    }
                     control_sender
                         .start_send(Control::Winit(
                             window.raw.id(),
@@ -1049,7 +1065,7 @@ async fn run_instance<P>(
                         ))
                         .expect("Send redraw event");
                     continue;
-                } 
+                }
                 // XX must force update to corner radius before the surface is committed.
                 #[cfg(all(feature = "cctk", target_os = "linux"))]
                 if (window.surface_version != window.state.surface_version()
