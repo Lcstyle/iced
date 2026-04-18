@@ -485,6 +485,30 @@ impl SctkEventLoop {
                     let had_events = !state.state.sctk_events.is_empty();
                     let mut wake_up = had_events;
 
+                    // Drain sctk_events FIRST so downstream handlers
+                    // (e.g., SessionLockSurfaceCreated -> window_manager.insert)
+                    // run before any RedrawRequested events we might push next.
+                    // Otherwise the render loop drops RedrawRequested events for
+                    // surfaces whose windows haven't been inserted yet, and no
+                    // mechanism re-triggers render — the greeter deadlocks
+                    // rendering despite FrameStatus=Ready and a11y_ready=true.
+                    for e in state.state.sctk_events.drain(..) {
+                        if let SctkEvent::Winit(id, e) = e {
+                            _ = state
+                                .state
+                                .events_sender
+                                .unbounded_send(Control::Winit(id, e));
+                        } else {
+                            _ =
+                                state
+                                    .state
+                                    .events_sender
+                                    .unbounded_send(Control::PlatformSpecific(
+                                    crate::platform_specific::Event::Wayland(e),
+                                ));
+                        }
+                    }
+
                     for s in
                         state
                             .state
@@ -527,23 +551,6 @@ impl SctkEventLoop {
                                 winit::event::WindowEvent::RedrawRequested,
                             ),
                         );
-                    }
-
-                    for e in state.state.sctk_events.drain(..) {
-                        if let SctkEvent::Winit(id, e) = e {
-                            _ = state
-                                .state
-                                .events_sender
-                                .unbounded_send(Control::Winit(id, e));
-                        } else {
-                            _ =
-                                state
-                                    .state
-                                    .events_sender
-                                    .unbounded_send(Control::PlatformSpecific(
-                                    crate::platform_specific::Event::Wayland(e),
-                                ));
-                        }
                     }
                     if wake_up {
                         state.state.proxy.wake_up();
