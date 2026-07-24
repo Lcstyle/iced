@@ -76,6 +76,7 @@ impl Text {
             None,
             8,
             cosmic_text::Hinting::Disabled,
+            cosmic_text::Direction::Auto,
         );
 
         let translation_x = match self.align_x {
