@@ -222,7 +222,8 @@ impl editor::Editor for Editor {
             cosmic_text::Selection::None => None,
             cosmic_text::Selection::Normal(cursor)
             | cosmic_text::Selection::Line(cursor)
-            | cosmic_text::Selection::Word(cursor) => Some(Position {
+            | cosmic_text::Selection::Word(cursor)
+            | cosmic_text::Selection::Block(cursor) => Some(Position {
                 line: cursor.line,
                 column: cursor.index,
             }),
