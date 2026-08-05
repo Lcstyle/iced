@@ -113,12 +113,13 @@ impl editor::Editor for Editor {
     fn is_empty(&self) -> bool {
         let buffer = self.buffer();
 
-        buffer.lines.is_empty()
-            || (buffer.lines.len() == 1 && buffer.lines[0].text().is_empty())
+        buffer.lines_is_empty()
+            || (buffer.line_count() == 1
+                && buffer.line(0).is_some_and(|line| line.text().is_empty()))
     }
 
     fn line(&self, index: usize) -> Option<editor::Line<'_>> {
-        self.buffer().lines.get(index).map(|line| editor::Line {
+        self.buffer().line(index).map(|line| editor::Line {
             text: Cow::Borrowed(line.text()),
             ending: match line.ending() {
                 cosmic_text::LineEnding::Lf => editor::LineEnding::Lf,
@@ -131,7 +132,7 @@ impl editor::Editor for Editor {
     }
 
     fn line_count(&self) -> usize {
-        self.buffer().lines.len()
+        self.buffer().line_count()
     }
 
     fn copy(&self) -> Option<String> {
@@ -312,10 +313,9 @@ impl editor::Editor for Editor {
                 Action::SelectAll => {
                     let buffer = buffer_from_editor(editor);
 
-                    if buffer.lines.len() > 1
+                    if buffer.line_count() > 1
                         || buffer
-                            .lines
-                            .first()
+                            .line(0)
                             .is_some_and(|line| !line.text().is_empty())
                     {
                         let cursor = editor.cursor();
@@ -498,7 +498,7 @@ impl editor::Editor for Editor {
             if font_system.version() != internal.version {
                 log::trace!("Updating `FontSystem` of `Editor`...");
 
-                for line in buffer.lines.iter_mut() {
+                for line in buffer.lines_iter_mut() {
                     line.reset();
                 }
 
@@ -509,7 +509,7 @@ impl editor::Editor for Editor {
             if new_font != internal.font {
                 log::trace!("Updating font of `Editor`...");
 
-                for line in buffer.lines.iter_mut() {
+                for line in buffer.lines_iter_mut() {
                     let _ = line.set_attrs_list(cosmic_text::AttrsList::new(
                         &text::to_attributes(new_font),
                     ));
@@ -578,8 +578,9 @@ impl editor::Editor for Editor {
         let mut window = (internal.bounds.height / buffer.metrics().line_height)
             .ceil() as i32;
 
-        let last_visible_line = buffer.lines[scroll.line..]
-            .iter()
+        let last_visible_line = buffer
+            .lines_iter()
+            .skip(scroll.line)
             .enumerate()
             .find_map(|(i, line)| {
                 let visible_lines = line
@@ -595,7 +596,7 @@ impl editor::Editor for Editor {
                     Some(scroll.line + i)
                 }
             })
-            .unwrap_or(buffer.lines.len().saturating_sub(1));
+            .unwrap_or(buffer.line_count().saturating_sub(1));
 
         let current_line = highlighter.current_line();
 
@@ -614,8 +615,10 @@ impl editor::Editor for Editor {
 
         let attributes = text::to_attributes(font);
 
-        for line in &mut buffer_mut_from_editor(&mut internal.editor).lines
-            [current_line..=last_visible_line]
+        for line in buffer_mut_from_editor(&mut internal.editor)
+            .lines_iter_mut()
+            .skip(current_line)
+            .take(last_visible_line + 1 - current_line)
         {
             let mut list = cosmic_text::AttrsList::new(&attributes);
 
@@ -718,8 +721,9 @@ fn visual_lines_offset(line: usize, buffer: &cosmic_text::Buffer) -> i32 {
     let start = scroll.line.min(line);
     let end = scroll.line.max(line);
 
-    let visual_lines_offset: usize = buffer.lines[start..]
-        .iter()
+    let visual_lines_offset: usize = buffer
+        .lines_iter()
+        .skip(start)
         .take(end - start)
         .map(|line| line.layout_opt().map(Vec::len).unwrap_or_default())
         .sum();

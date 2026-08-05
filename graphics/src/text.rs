@@ -248,18 +248,18 @@ pub fn align(
     let mut needs_relayout = has_rtl;
 
     if let Some(align) = to_align(alignment) {
-        let has_multiple_lines = buffer.lines.len() > 1
-            || buffer.lines.first().is_some_and(|line| {
+        let has_multiple_lines = buffer.line_count() > 1
+            || buffer.line(0).is_some_and(|line| {
                 line.layout_opt().is_some_and(|layout| layout.len() > 1)
             });
 
         if has_multiple_lines {
-            for line in &mut buffer.lines {
+            for line in buffer.lines_iter_mut() {
                 let _ = line.set_align(Some(align));
             }
 
             needs_relayout = true;
-        } else if let Some(line) = buffer.lines.first_mut() {
+        } else if let Some(line) = buffer.line_mut(0) {
             needs_relayout |= line.set_align(None);
         }
     }

@@ -284,7 +284,7 @@ impl core::text::Paragraph for Paragraph {
         let internal = self.internal();
 
         let cursor = internal.buffer.hit(point.x, point.y)?;
-        let line = internal.buffer.lines.get(cursor.line)?;
+        let line = internal.buffer.line(cursor.line)?;
 
         if cursor.index >= line.text().len() {
             return None;
